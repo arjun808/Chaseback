@@ -1,0 +1,11 @@
+# Set default behavior to automatically normalize line endings to LF
+* text=auto eol=lf
+
+# Force binary for images and fonts
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
