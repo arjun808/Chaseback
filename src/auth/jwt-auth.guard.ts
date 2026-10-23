@@ -22,17 +22,23 @@ export class JwtAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthRequest>();
-    const authHeader = request.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException(
-        'Missing or invalid Authorization header',
-      );
+    const cookieToken: unknown = request.cookies?.access_token;
+    let token: string | undefined =
+      typeof cookieToken === 'string' && cookieToken.length > 0
+        ? cookieToken
+        : undefined;
+
+    if (!token) {
+      const authHeader = request.headers.authorization;
+      if (authHeader?.startsWith('Bearer ')) {
+        const parts = authHeader.split(' ');
+        token = parts[1];
+      }
     }
 
-    const token = authHeader.split(' ')[1];
     if (!token) {
-      throw new UnauthorizedException('Bearer token is missing');
+      throw new UnauthorizedException('Authentication token is missing');
     }
 
     try {

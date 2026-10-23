@@ -28,20 +28,27 @@ export class AuthController {
   }
 
   @Get('google/callback')
-  async googleCallback(@Query('code') code?: string) {
+  async googleCallback(
+    @Query('code') code: string | undefined,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     if (!code) {
       throw new BadRequestException('Missing authorization code');
     }
     const user = await this.authService.handleCallback(code);
     const token = await this.authService.signToken(user);
 
+    res.cookie('access_token', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
     return {
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-      },
+      id: user.id,
+      email: user.email,
+      name: user.name,
     };
   }
 
@@ -58,7 +65,12 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('logout')
-  logout() {
+  logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('access_token', {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
     return { message: 'Logged out successfully' };
   }
 }
